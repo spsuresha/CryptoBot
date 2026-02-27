@@ -1,0 +1,127 @@
+# Cryptocurrency Trading Bot Configuration
+# Copy this file to config.yaml and customize for your needs
+
+exchange:
+  name: binance
+  testnet: true  # Set to false for live trading (CAUTION!)
+  rate_limit_delay: 0.1  # Delay between API calls in seconds
+  enable_rate_limit: true
+
+trading:
+  # Trading pairs to monitor (must be valid pairs on the exchange)
+  pairs:
+    - BTCUSDT
+    - ETHUSDT
+
+  # Timeframes for analysis
+  timeframes:
+    - 5m
+    - 1h
+
+  # Default timeframe for live trading
+  default_timeframe: 5m
+
+  # Number of candles to fetch for analysis
+  lookback_periods: 200
+
+strategy:
+  # Strategy name: ma_crossover
+  name: ma_crossover
+
+  # Moving Average parameters
+  parameters:
+    fast_period: 10  # Fast MA period
+    slow_period: 30  # Slow MA period
+
+    # RSI Filter (optional)
+    use_rsi_filter: true
+    rsi_period: 14
+    rsi_overbought: 70
+    rsi_oversold: 30
+
+    # MACD Filter (optional)
+    use_macd_filter: false
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+
+    # Bollinger Bands Filter (optional)
+    use_bb_filter: false
+    bb_period: 20
+    bb_std: 2
+
+risk:
+  # Position sizing
+  max_position_size_percent: 10  # Maximum % of portfolio per trade
+  position_sizing_method: fixed  # Options: fixed, volatility
+
+  # Stop Loss and Take Profit
+  stop_loss_percent: 2.0  # Stop loss percentage below entry
+  take_profit_percent: 4.0  # Take profit percentage above entry
+  trailing_stop_percent: 1.5  # Trailing stop loss percentage
+  use_trailing_stop: true
+
+  # Portfolio Management
+  max_concurrent_positions: 3  # Maximum number of open positions
+  max_allocation_per_asset: 30  # Maximum % of portfolio in one asset
+
+  # Risk Limits
+  daily_loss_limit_percent: 5.0  # Stop trading if daily loss exceeds this
+  max_drawdown_percent: 20.0  # Alert if drawdown exceeds this
+
+  # Circuit Breaker
+  enable_circuit_breaker: true
+  circuit_breaker_volatility_threshold: 10  # Pause if price moves > this % in 1 candle
+
+backtesting:
+  # Date range for backtesting (YYYY-MM-DD format)
+  start_date: "2024-01-01"
+  end_date: "2025-01-01"
+
+  # Initial capital for backtesting
+  initial_capital: 10000
+
+  # Transaction costs
+  commission: 0.001  # 0.1% per trade (maker/taker fee)
+  slippage: 0.0005  # 0.05% slippage estimate
+
+  # Backtesting options
+  save_trades: true
+  generate_report: true
+
+monitoring:
+  # Logging
+  log_level: INFO  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_to_file: true
+  log_to_console: true
+  max_log_file_size_mb: 10
+  log_backup_count: 5
+
+  # Telegram Alerts
+  telegram_alerts: true
+  alert_on_trade: true
+  alert_on_error: true
+  alert_on_daily_summary: true
+  daily_summary_time: "23:00"  # UTC time for daily summary
+
+  # Health Checks
+  health_check_interval: 300  # Health check every 5 minutes
+
+  # Performance Dashboard
+  dashboard_update_interval: 60  # Update dashboard every 60 seconds
+
+bot:
+  # Bot operation mode
+  mode: paper  # Options: dry_run, paper, live
+
+  # Graceful shutdown
+  save_state_on_exit: true
+  load_state_on_start: true
+
+  # Error handling
+  auto_restart_on_error: true
+  max_restart_attempts: 3
+  restart_delay_seconds: 60
+
+  # Update interval for live trading
+  update_interval_seconds: 60  # Check for new signals every minute
