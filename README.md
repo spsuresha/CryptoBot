@@ -5,14 +5,17 @@ A professional Python cryptocurrency trading bot with backtesting capabilities, 
 ## Features
 
 - **Multiple Trading Modes**: Dry-run, paper trading, and live trading
-- **Backtesting Engine**: Test strategies on historical data
+- **Backtesting Engine**: Test strategies on historical data with comprehensive metrics
+- **Web Dashboard**: Mobile-friendly interface to monitor bot from your phone
 - **Modular Strategy System**: Easy to create and swap trading strategies
 - **Risk Management**: Stop loss, take profit, position sizing, daily loss limits
 - **Technical Indicators**: RSI, MACD, Bollinger Bands, Moving Averages, and more
 - **Database Persistence**: SQLite database for trade history and bot state
 - **Comprehensive Logging**: Multiple log files with rotation
+- **Telegram Alerts**: Real-time notifications for trades and errors
 - **Exchange Support**: Built on CCXT library (supports 100+ exchanges)
 - **Safety Features**: Circuit breaker, position limits, balance checks
+- **24/7 Operation**: Windows service setup with automatic restart on failure
 
 ## Project Structure
 
@@ -147,6 +150,31 @@ python main.py analyze --days 30
 python main.py analyze --days 7
 ```
 
+### 5. Web Dashboard (Mobile Monitoring)
+
+Monitor your bot from anywhere with the mobile-friendly web dashboard:
+
+```bash
+# Start the dashboard
+python web_dashboard.py
+```
+
+Then access from:
+- **Computer**: http://localhost:5000
+- **Phone**: http://YOUR_IP:5000 (find IP with `ipconfig`)
+
+**Features:**
+- Real-time bot status and uptime
+- Open positions with unrealized P&L
+- Recent trades with filters
+- Daily P&L chart
+- System resource monitoring
+- Auto-refresh every 10 seconds
+
+**Login:** Default username is `admin`, password is `crypto123` (change in `.env`!)
+
+**See [DASHBOARD_SETUP.md](DASHBOARD_SETUP.md) for complete setup guide.**
+
 ## Configuration
 
 ### Environment Variables (.env)
@@ -159,6 +187,10 @@ python main.py analyze --days 7
 | `TELEGRAM_CHAT_ID` | Telegram chat ID | No |
 | `ENVIRONMENT` | `testnet` or `mainnet` | Yes |
 | `DATABASE_URL` | Database connection URL | No (default: SQLite) |
+| `DASHBOARD_USERNAME` | Dashboard login username | No (default: admin) |
+| `DASHBOARD_PASSWORD` | Dashboard login password | No (default: crypto123) |
+| `DASHBOARD_HOST` | Dashboard host IP | No (default: 0.0.0.0) |
+| `DASHBOARD_PORT` | Dashboard port | No (default: 5000) |
 
 ### Trading Configuration (config.yaml)
 
