@@ -1,0 +1,75 @@
+# Conservative Trend Following Strategy Configuration
+# Target: 70% win rate, <30% max drawdown
+
+exchange:
+  name: binance
+  testnet: true
+  rate_limit_delay: 0.1
+  enable_rate_limit: true
+
+trading:
+  pairs:
+    - BTC/USDT
+  timeframes:
+    - 1h
+  default_timeframe: 1h
+  lookback_periods: 200
+
+strategy:
+  name: conservative_trend
+  parameters:
+    # Trend identification
+    trend_period: 50        # Long-term trend EMA
+    fast_ema: 8             # Fast momentum EMA
+    slow_ema: 21            # Slow momentum EMA
+    exit_ema: 20            # Quick exit EMA
+
+    # RSI settings
+    rsi_period: 14
+    rsi_min: 40             # Don't buy if RSI too low
+    rsi_max: 60             # Don't buy if RSI too high
+    rsi_exit: 70            # Exit if RSI overbought
+
+    # Trend strength
+    adx_period: 14
+    adx_threshold: 25       # Only trade strong trends
+
+    # Bollinger Bands
+    bb_period: 20
+    bb_std: 2.0
+
+    # ATR-based stops
+    atr_period: 14
+    atr_stop_mult: 2.0      # Stop loss: 2 ATR below entry
+    atr_target_mult: 3.0    # Take profit: 3 ATR above entry
+
+risk:
+  # Position sizing
+  max_position_size_percent: 10.0
+  position_size_method: volatility
+
+  # Risk per trade
+  risk_per_trade_percent: 2.0
+
+  # Stop loss and take profit (handled by strategy ATR-based)
+  use_stop_loss: true
+  use_take_profit: true
+
+  # Portfolio limits
+  max_concurrent_positions: 2
+  max_daily_trades: 5
+
+  # Circuit breaker
+  daily_loss_limit_percent: 5.0
+  max_consecutive_losses: 3
+
+backtesting:
+  initial_capital: 1000
+  commission: 0.001      # 0.1% per trade
+  slippage: 0.0005       # 0.05% slippage
+  data_cache_enabled: true
+
+logging:
+  level: INFO
+  log_trades: true
+  log_signals: true
