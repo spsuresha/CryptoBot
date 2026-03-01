@@ -114,16 +114,10 @@ class StrategyOptimizer:
         Returns:
             Results dictionary with metrics
         """
-        # Create strategy with parameters
-        strategy = MACrossoverStrategy(
-            fast_period=params['fast_period'],
-            slow_period=params['slow_period'],
-            rsi_period=14,
-            rsi_overbought=params['rsi_overbought'],
-            rsi_oversold=params['rsi_oversold'],
-            use_rsi_filter=params['use_rsi_filter'],
-            use_macd_filter=params['use_macd_filter']
-        )
+        # Create strategy with parameters (as dict with rsi_period added)
+        strategy_params = params.copy()
+        strategy_params['rsi_period'] = 14
+        strategy = MACrossoverStrategy(parameters=strategy_params)
 
         # Run backtest
         backtest = BacktestEngine(
@@ -199,6 +193,11 @@ class StrategyOptimizer:
 
         # Convert to DataFrame for easy analysis
         results_df = pd.DataFrame(self.results)
+
+        # Check if we have any results
+        if len(results_df) == 0:
+            logger.error("All parameter combinations failed. No results to analyze.")
+            return pd.DataFrame()
 
         # Filter by minimum trades
         results_df = results_df[results_df['num_trades'] >= min_trades]
@@ -305,20 +304,21 @@ def main():
 
     # Load settings and fetch data
     settings = Settings()
-    connector = ExchangeConnector(
-        settings.exchange_name,
-        settings.binance_api_key,
-        settings.binance_secret_key,
-        testnet=settings.exchange_testnet
-    )
+    connector = ExchangeConnector(settings)
+    connector.connect()
     data_fetcher = DataFetcher(connector)
 
     logger.info("Fetching historical data...")
-    df = data_fetcher.fetch_ohlcv(
+
+    # Parse dates
+    start_dt = datetime.strptime(args.start, '%Y-%m-%d')
+    end_dt = datetime.strptime(args.end, '%Y-%m-%d')
+
+    df = data_fetcher.fetch_ohlcv_dataframe(
         symbol=args.pair,
         timeframe=args.timeframe,
-        start_date=args.start,
-        end_date=args.end
+        since=start_dt,
+        until=end_dt
     )
     logger.info(f"Loaded {len(df)} candles")
 
