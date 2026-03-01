@@ -1,9 +1,9 @@
 """
 Technical indicators for trading strategies.
-Uses pandas-ta library for indicator calculations.
+Uses ta library for indicator calculations.
 """
 import pandas as pd
-import pandas_ta as ta
+import ta
 import logging
 from typing import Tuple
 
@@ -22,7 +22,7 @@ def calculate_sma(df: pd.DataFrame, period: int, column: str = 'close') -> pd.Se
     Returns:
         Series with SMA values
     """
-    return ta.sma(df[column], length=period)
+    return ta.trend.sma_indicator(df[column], window=period)
 
 
 def calculate_ema(df: pd.DataFrame, period: int, column: str = 'close') -> pd.Series:
@@ -37,7 +37,7 @@ def calculate_ema(df: pd.DataFrame, period: int, column: str = 'close') -> pd.Se
     Returns:
         Series with EMA values
     """
-    return ta.ema(df[column], length=period)
+    return ta.trend.ema_indicator(df[column], window=period)
 
 
 def calculate_rsi(df: pd.DataFrame, period: int = 14, column: str = 'close') -> pd.Series:
@@ -52,7 +52,7 @@ def calculate_rsi(df: pd.DataFrame, period: int = 14, column: str = 'close') -> 
     Returns:
         Series with RSI values (0-100)
     """
-    return ta.rsi(df[column], length=period)
+    return ta.momentum.rsi(df[column], window=period)
 
 
 def calculate_macd(
@@ -75,16 +75,15 @@ def calculate_macd(
     Returns:
         Tuple of (MACD line, Signal line, Histogram)
     """
-    macd_result = ta.macd(df[column], fast=fast, slow=slow, signal=signal)
+    try:
+        macd_line = ta.trend.macd(df[column], window_slow=slow, window_fast=fast)
+        signal_line = ta.trend.macd_signal(df[column], window_slow=slow, window_fast=fast, window_sign=signal)
+        histogram = ta.trend.macd_diff(df[column], window_slow=slow, window_fast=fast, window_sign=signal)
 
-    if macd_result is None or macd_result.empty:
+        return macd_line, signal_line, histogram
+    except Exception as e:
+        logger.warning(f"Error calculating MACD: {e}")
         return pd.Series(), pd.Series(), pd.Series()
-
-    macd_line = macd_result[f'MACD_{fast}_{slow}_{signal}']
-    signal_line = macd_result[f'MACDs_{fast}_{slow}_{signal}']
-    histogram = macd_result[f'MACDh_{fast}_{slow}_{signal}']
-
-    return macd_line, signal_line, histogram
 
 
 def calculate_bollinger_bands(
@@ -105,16 +104,16 @@ def calculate_bollinger_bands(
     Returns:
         Tuple of (Upper band, Middle band, Lower band)
     """
-    bb_result = ta.bbands(df[column], length=period, std=std)
+    try:
+        bb = ta.volatility.BollingerBands(close=df[column], window=period, window_dev=std)
+        upper = bb.bollinger_hband()
+        middle = bb.bollinger_mavg()
+        lower = bb.bollinger_lband()
 
-    if bb_result is None or bb_result.empty:
+        return upper, middle, lower
+    except Exception as e:
+        logger.warning(f"Error calculating Bollinger Bands: {e}")
         return pd.Series(), pd.Series(), pd.Series()
-
-    upper = bb_result[f'BBU_{period}_{std}']
-    middle = bb_result[f'BBM_{period}_{std}']
-    lower = bb_result[f'BBL_{period}_{std}']
-
-    return upper, middle, lower
 
 
 def calculate_atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
@@ -128,7 +127,7 @@ def calculate_atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
     Returns:
         Series with ATR values
     """
-    return ta.atr(df['high'], df['low'], df['close'], length=period)
+    return ta.volatility.average_true_range(df['high'], df['low'], df['close'], window=period)
 
 
 def calculate_adx(df: pd.DataFrame, period: int = 14) -> pd.Series:
@@ -142,12 +141,11 @@ def calculate_adx(df: pd.DataFrame, period: int = 14) -> pd.Series:
     Returns:
         Series with ADX values (0-100)
     """
-    adx_result = ta.adx(df['high'], df['low'], df['close'], length=period)
-
-    if adx_result is None or adx_result.empty:
+    try:
+        return ta.trend.adx(df['high'], df['low'], df['close'], window=period)
+    except Exception as e:
+        logger.warning(f"Error calculating ADX: {e}")
         return pd.Series()
-
-    return adx_result[f'ADX_{period}']
 
 
 def calculate_stochastic(
@@ -168,22 +166,21 @@ def calculate_stochastic(
     Returns:
         Tuple of (%K line, %D line)
     """
-    stoch_result = ta.stoch(
-        df['high'],
-        df['low'],
-        df['close'],
-        k=k_period,
-        d=d_period,
-        smooth_k=smooth
-    )
+    try:
+        stoch = ta.momentum.StochasticOscillator(
+            high=df['high'],
+            low=df['low'],
+            close=df['close'],
+            window=k_period,
+            smooth_window=d_period
+        )
+        k_line = stoch.stoch()
+        d_line = stoch.stoch_signal()
 
-    if stoch_result is None or stoch_result.empty:
+        return k_line, d_line
+    except Exception as e:
+        logger.warning(f"Error calculating Stochastic: {e}")
         return pd.Series(), pd.Series()
-
-    k_line = stoch_result[f'STOCHk_{k_period}_{d_period}_{smooth}']
-    d_line = stoch_result[f'STOCHd_{k_period}_{d_period}_{smooth}']
-
-    return k_line, d_line
 
 
 def calculate_obv(df: pd.DataFrame) -> pd.Series:
@@ -196,7 +193,7 @@ def calculate_obv(df: pd.DataFrame) -> pd.Series:
     Returns:
         Series with OBV values
     """
-    return ta.obv(df['close'], df['volume'])
+    return ta.volume.on_balance_volume(df['close'], df['volume'])
 
 
 def detect_ma_crossover(
@@ -213,17 +210,19 @@ def detect_ma_crossover(
     Returns:
         Series with values: 1 (bullish crossover), -1 (bearish crossover), 0 (no crossover)
     """
-    # Current: fast > slow
+    # Current position
     above = fast_ma > slow_ma
+    below = fast_ma <= slow_ma
 
-    # Previous: fast <= slow (shifted by 1)
+    # Previous position (shifted by 1)
     was_below = fast_ma.shift(1) <= slow_ma.shift(1)
+    was_above = fast_ma.shift(1) > slow_ma.shift(1)
 
     # Bullish crossover: was below, now above
     bullish = above & was_below
 
     # Bearish crossover: was above, now below
-    bearish = ~above & ~was_below.shift(-1)
+    bearish = below & was_above
 
     # Create signal series
     signals = pd.Series(0, index=fast_ma.index)

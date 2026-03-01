@@ -26,7 +26,7 @@ app.config['SECRET_KEY'] = os.getenv('DASHBOARD_SECRET_KEY', 'change-this-secret
 settings = Settings()
 
 # Database setup
-engine = create_engine(f'sqlite:///{settings.database_path}')
+engine = create_engine(settings.database_url)
 Session = sessionmaker(bind=engine)
 
 # Basic authentication

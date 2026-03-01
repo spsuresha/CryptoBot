@@ -4,6 +4,25 @@ Get your trading bot running in 5 minutes!
 
 ## 1. Install Dependencies
 
+### Windows Users: Use Quick Install Script
+
+If you get build errors with `pip install -r requirements.txt`, use this instead:
+
+```bash
+# Double-click this file or run:
+install_quick.bat
+```
+
+**Or** manually install:
+```bash
+pip install PyYAML python-dotenv ccxt SQLAlchemy Flask psutil requests schedule
+pip install numpy pandas matplotlib seaborn pandas-ta python-telegram-bot
+```
+
+**Having issues?** See [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md) for detailed troubleshooting.
+
+### Linux/Mac Users:
+
 ```bash
 pip install -r requirements.txt
 ```
