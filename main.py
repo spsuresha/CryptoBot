@@ -32,6 +32,7 @@ def backtest_command(args):
         from src.exchange.connector import ExchangeConnector
         from src.exchange.data_fetcher import DataFetcher
         from src.strategies.ma_crossover import MACrossoverStrategy
+        from src.strategies.conservative_trend import ConservativeTrendStrategy
         from src.backtesting.backtest_engine import BacktestEngine
         from src.backtesting.performance import PerformanceMetrics
         from src.backtesting.visualizer import Visualizer
@@ -56,8 +57,14 @@ def backtest_command(args):
 
         logger.info(f"Loaded {len(df)} candles")
 
-        # Initialize strategy
-        strategy = MACrossoverStrategy(settings.strategy_params)
+        # Initialize strategy based on config
+        strategy_name = settings.strategy_name.lower()
+        if strategy_name == 'conservative_trend':
+            logger.info("Using Conservative Trend Strategy")
+            strategy = ConservativeTrendStrategy(settings.strategy_params)
+        else:
+            logger.info("Using MA Crossover Strategy")
+            strategy = MACrossoverStrategy(settings.strategy_params)
 
         # Initialize backtest engine
         logger.info("Running backtest...")
