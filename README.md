@@ -150,7 +150,31 @@ python main.py analyze --days 30
 python main.py analyze --days 7
 ```
 
-### 5. Web Dashboard (Mobile Monitoring)
+### 5. Strategy Optimization (Grid Search)
+
+Find the best strategy parameters using automated grid search:
+
+```bash
+# Optimize strategy parameters
+python optimize_strategy.py --start 2024-01-01 --end 2024-12-31
+
+# Quick test (fewer combinations)
+python optimize_strategy.py --start 2024-01-01 --end 2024-12-31 --quick
+
+# Optimize for different metrics
+python optimize_strategy.py --start 2024-01-01 --end 2024-12-31 --ranking total_return
+```
+
+**What it does:**
+- Tests 100+ parameter combinations automatically
+- Ranks results by Sharpe ratio, total return, or other metrics
+- Shows top 10 best configurations
+- Saves full results to CSV for analysis
+- Recommends optimal config.yaml settings
+
+**See [OPTIMIZATION_GUIDE.md](OPTIMIZATION_GUIDE.md) for complete guide.**
+
+### 6. Web Dashboard (Mobile Monitoring)
 
 Monitor your bot from anywhere with the mobile-friendly web dashboard:
 
