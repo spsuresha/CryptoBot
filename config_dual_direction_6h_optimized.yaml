@@ -1,0 +1,57 @@
+# Dual Direction Strategy - 6H OPTIMIZED
+# Best performing configuration found through comprehensive testing
+# Performance: 17.46% return, 40.4% win rate, P.F. 1.61
+
+exchange:
+  name: binance
+  testnet: true
+  futures: true
+  rate_limit_delay: 0.1
+
+strategy:
+  name: dual_direction
+  parameters:
+    long_rsi_oversold: 30
+    long_rsi_extreme: 20
+    long_stoch_oversold: 20
+    long_stop_loss_pct: 6.0
+    long_take_profit_pct: 15.0
+    short_rsi_overbought: 70
+    short_stop_loss_pct: 3.0
+    short_take_profit_pct: 6.0
+    require_volume_confirmation: True
+    enable_longs: True
+    enable_shorts: False
+
+risk:
+  risk_per_trade_percent: 1.0
+  max_position_size_percent: 20.0
+  max_concurrent_positions: 1
+  max_trades_per_day: 10
+  daily_loss_limit_percent: 5.0
+  max_consecutive_losses: 3
+  max_drawdown_percent: 30.0
+
+trading:
+  pairs:
+    - BTC/USDT
+  default_timeframe: 6h
+  use_futures: true
+  leverage: 1
+  use_limit_orders: false
+
+backtesting:
+  initial_capital: 10000.0
+  commission: 0.0004
+  slippage: 0.001
+
+monitoring:
+  telegram_alerts: true
+  log_level: INFO
+
+# PERFORMANCE (6h timeframe):
+#   Return: 17.46%
+#   Profit Factor: 1.61
+#   Win Rate: 40.4%
+#   Max Drawdown: 26.6%
+#   Total Trades: 99

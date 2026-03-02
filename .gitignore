@@ -27,6 +27,7 @@ wheels/
 
 # Virtual environments
 venv/
+venv311/
 ENV/
 env/
 .venv
@@ -41,6 +42,8 @@ env/
 # Logs
 logs/
 *.log
+paper_trading*.log
+*.pid
 
 # Database
 *.db

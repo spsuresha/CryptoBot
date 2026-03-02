@@ -40,13 +40,16 @@ class ConservativeTrendStrategy(BaseStrategy):
     4. MACD > Signal (bullish momentum)
     5. Price > BB Middle (above average)
     6. Short EMA > Long EMA (momentum)
+    7. ALL conditions must stay TRUE for N bars (confirmation period, default 5)
 
-    Exit Rules (ANY triggers SELL):
-    1. Price < 20 EMA (fast exit)
-    2. RSI > 70 (overbought)
-    3. MACD < Signal (momentum shift)
-    4. Stop loss: 2 ATR below entry
-    5. Take profit: 3 ATR above entry
+    Exit Rules:
+    1. RSI > 70 for 2 consecutive bars (overbought, confirmed)
+    2. Stop loss: 2 ATR below entry
+    3. Take profit: 3 ATR above entry
+
+    Note: Removed fast EMA exit and MACD exit as they were too sensitive,
+    causing premature exits (47-51% flip rate). Now relies on RSI confirmation
+    and ATR-based risk management for better trade duration.
     """
 
     def __init__(self, parameters: Optional[Dict[str, Any]] = None):
@@ -69,6 +72,7 @@ class ConservativeTrendStrategy(BaseStrategy):
             atr_period: ATR period (default: 14)
             atr_stop_mult: ATR multiplier for stop loss (default: 2.0)
             atr_target_mult: ATR multiplier for take profit (default: 3.0)
+            confirmation_bars: Bars required to confirm entry (default: 5)
         """
         super().__init__("Conservative Trend")
 
@@ -100,11 +104,15 @@ class ConservativeTrendStrategy(BaseStrategy):
         self.atr_stop_mult = parameters.get('atr_stop_mult', 2.0)
         self.atr_target_mult = parameters.get('atr_target_mult', 3.0)
 
+        # Confirmation parameters
+        self.confirmation_bars = parameters.get('confirmation_bars', 5)
+
         logger.info(f"Initialized {self.name}")
         logger.info(f"Trend EMA: {self.trend_period}, Fast/Slow EMA: {self.fast_ema}/{self.slow_ema}")
         logger.info(f"RSI Range: {self.rsi_min}-{self.rsi_max}, Exit: {self.rsi_exit}")
         logger.info(f"ADX Threshold: {self.adx_threshold}")
         logger.info(f"ATR Stop/Target: {self.atr_stop_mult}/{self.atr_target_mult}")
+        logger.info(f"Confirmation Bars: {self.confirmation_bars}")
 
     def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculate all indicators."""
@@ -154,8 +162,8 @@ class ConservativeTrendStrategy(BaseStrategy):
         df['above_bb_mid'] = df['close'] > df['bb_middle']
         df['momentum'] = df['fast_ema'] > df['slow_ema']
 
-        # BUY: ALL conditions must be TRUE
-        buy_signal = (
+        # ALL conditions must be TRUE (current bar)
+        all_conditions = (
             df['uptrend'] &
             df['strong_trend'] &
             df['rsi_good'] &
@@ -164,19 +172,37 @@ class ConservativeTrendStrategy(BaseStrategy):
             df['momentum']
         )
 
-        # Calculate conditions for SELL
-        df['fast_exit'] = df['close'] < df['exit_ema']
+        # Confirmation: Conditions must stay TRUE for N consecutive bars
+        # Use rolling window to check if conditions were true for last N bars
+        all_conditions_rolling = all_conditions.rolling(
+            window=self.confirmation_bars,
+            min_periods=self.confirmation_bars
+        ).sum()
+
+        all_conditions_confirmed = all_conditions_rolling == self.confirmation_bars
+
+        # Also check that N bars ago, conditions were NOT fully confirmed
+        # This ensures we only signal at the START of a confirmed stretch
+        rolling_prev = all_conditions_rolling.shift(1).fillna(0)
+
+        # BUY: Just became confirmed (rolling sum just reached N, was less than N before)
+        buy_signal = (all_conditions_rolling == self.confirmation_bars) & (rolling_prev < self.confirmation_bars)
+
+        # Calculate exit conditions (only use RSI for signal-based exits)
+        # Removed fast_exit and macd_bear as they're too sensitive (flip 47-51% of time)
+        # Rely on ATR-based stops and take_profit instead for main exits
         df['rsi_high'] = df['rsi'] > self.rsi_exit
-        df['macd_bear'] = df['macd'] < df['macd_signal']
 
-        # SELL: ANY condition triggers exit
-        sell_signal = (
-            df['fast_exit'] |
-            df['rsi_high'] |
-            df['macd_bear']
-        )
+        # RSI exit confirmed over 2 bars to avoid whipsaw
+        rsi_high_confirmed = df['rsi_high'].rolling(window=2, min_periods=2).sum() == 2
 
-        # Set signals
+        # Previous bar RSI exit
+        rsi_high_confirmed_prev = rsi_high_confirmed.shift(1).fillna(False)
+
+        # SELL: RSI becomes overbought and stays for 2 bars
+        sell_signal = rsi_high_confirmed & ~rsi_high_confirmed_prev
+
+        # Set signals (only on transitions)
         df.loc[buy_signal, 'signal'] = SignalType.BUY.value
         df.loc[sell_signal, 'signal'] = SignalType.SELL.value
 

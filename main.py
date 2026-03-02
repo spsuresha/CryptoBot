@@ -33,6 +33,14 @@ def backtest_command(args):
         from src.exchange.data_fetcher import DataFetcher
         from src.strategies.ma_crossover import MACrossoverStrategy
         from src.strategies.conservative_trend import ConservativeTrendStrategy
+        from src.strategies.simple_scalping import SimpleScalpingStrategy
+        from src.strategies.adaptive_trend import AdaptiveTrendStrategy
+        from src.strategies.macd_rsi_ema import MacdRsiEmaStrategy
+        from src.strategies.buy_low_sell_high import BuyLowSellHighStrategy
+        from src.strategies.gaussian_channel import GaussianChannelStrategy
+        from src.strategies.futures_momentum import FuturesMomentumStrategy
+        from src.strategies.bearish_short import BearishShortStrategy
+        from src.strategies.dual_direction import DualDirectionStrategy
         from src.backtesting.backtest_engine import BacktestEngine
         from src.backtesting.performance import PerformanceMetrics
         from src.backtesting.visualizer import Visualizer
@@ -62,6 +70,30 @@ def backtest_command(args):
         if strategy_name == 'conservative_trend':
             logger.info("Using Conservative Trend Strategy")
             strategy = ConservativeTrendStrategy(settings.strategy_params)
+        elif strategy_name == 'simple_scalping':
+            logger.info("Using Simple Scalping Strategy (60% Win Rate)")
+            strategy = SimpleScalpingStrategy(settings.strategy_params)
+        elif strategy_name == 'adaptive_trend':
+            logger.info("Using Adaptive Trend-Following Strategy")
+            strategy = AdaptiveTrendStrategy(settings.strategy_params)
+        elif strategy_name == 'macd_rsi_ema':
+            logger.info("Using MACD+RSI+EMA Strategy")
+            strategy = MacdRsiEmaStrategy(settings.strategy_params)
+        elif strategy_name == 'buy_low_sell_high':
+            logger.info("Using Buy Low Sell High Strategy")
+            strategy = BuyLowSellHighStrategy(settings.strategy_params)
+        elif strategy_name == 'gaussian_channel':
+            logger.info("Using Gaussian Channel Strategy")
+            strategy = GaussianChannelStrategy(settings.strategy_params)
+        elif strategy_name == 'futures_momentum':
+            logger.info("Using Futures Momentum Strategy")
+            strategy = FuturesMomentumStrategy(settings.strategy_params)
+        elif strategy_name == 'bearish_short':
+            logger.info("Using Bearish Short Strategy")
+            strategy = BearishShortStrategy(settings.strategy_params)
+        elif strategy_name == 'dual_direction':
+            logger.info("Using Dual Direction Strategy (LONG + SHORT)")
+            strategy = DualDirectionStrategy(settings.strategy_params)
         else:
             logger.info("Using MA Crossover Strategy")
             strategy = MACrossoverStrategy(settings.strategy_params)
@@ -115,6 +147,15 @@ def paper_command(args):
         from src.exchange.connector import ExchangeConnector
         from src.exchange.data_fetcher import DataFetcher
         from src.strategies.ma_crossover import MACrossoverStrategy
+        from src.strategies.conservative_trend import ConservativeTrendStrategy
+        from src.strategies.simple_scalping import SimpleScalpingStrategy
+        from src.strategies.adaptive_trend import AdaptiveTrendStrategy
+        from src.strategies.macd_rsi_ema import MacdRsiEmaStrategy
+        from src.strategies.buy_low_sell_high import BuyLowSellHighStrategy
+        from src.strategies.gaussian_channel import GaussianChannelStrategy
+        from src.strategies.futures_momentum import FuturesMomentumStrategy
+        from src.strategies.bearish_short import BearishShortStrategy
+        from src.strategies.dual_direction import DualDirectionStrategy
         from src.risk.portfolio import Portfolio
         import time
 
@@ -123,7 +164,40 @@ def paper_command(args):
         connector.connect()
 
         data_fetcher = DataFetcher(connector, settings)
-        strategy = MACrossoverStrategy(settings.strategy_params)
+
+        # Initialize strategy based on config
+        strategy_name = settings.strategy_name.lower()
+        if strategy_name == 'conservative_trend':
+            logger.info("Using Conservative Trend Strategy")
+            strategy = ConservativeTrendStrategy(settings.strategy_params)
+        elif strategy_name == 'simple_scalping':
+            logger.info("Using Simple Scalping Strategy")
+            strategy = SimpleScalpingStrategy(settings.strategy_params)
+        elif strategy_name == 'adaptive_trend':
+            logger.info("Using Adaptive Trend-Following Strategy")
+            strategy = AdaptiveTrendStrategy(settings.strategy_params)
+        elif strategy_name == 'macd_rsi_ema':
+            logger.info("Using MACD+RSI+EMA Strategy")
+            strategy = MacdRsiEmaStrategy(settings.strategy_params)
+        elif strategy_name == 'buy_low_sell_high':
+            logger.info("Using Buy Low Sell High Strategy")
+            strategy = BuyLowSellHighStrategy(settings.strategy_params)
+        elif strategy_name == 'gaussian_channel':
+            logger.info("Using Gaussian Channel Strategy")
+            strategy = GaussianChannelStrategy(settings.strategy_params)
+        elif strategy_name == 'futures_momentum':
+            logger.info("Using Futures Momentum Strategy")
+            strategy = FuturesMomentumStrategy(settings.strategy_params)
+        elif strategy_name == 'bearish_short':
+            logger.info("Using Bearish Short Strategy")
+            strategy = BearishShortStrategy(settings.strategy_params)
+        elif strategy_name == 'dual_direction':
+            logger.info("Using Dual Direction Strategy (LONG + SHORT)")
+            strategy = DualDirectionStrategy(settings.strategy_params)
+        else:
+            logger.info("Using MA Crossover Strategy")
+            strategy = MACrossoverStrategy(settings.strategy_params)
+
         portfolio = Portfolio(initial_balance=settings.initial_capital)
 
         logger.info(f"Initial balance: ${portfolio.balance:.2f}")
@@ -268,7 +342,7 @@ Examples:
     backtest_parser = subparsers.add_parser("backtest", help="Run backtesting")
     backtest_parser.add_argument("--pair", default="BTC/USDT", help="Trading pair")
     backtest_parser.add_argument("--start", default="2024-01-01", help="Start date (YYYY-MM-DD)")
-    backtest_parser.add_argument("--end", default="2024-12-31", help="End date (YYYY-MM-DD)")
+    backtest_parser.add_argument("--end", default="2025-12-31", help="End date (YYYY-MM-DD)")
     backtest_parser.add_argument("--timeframe", default="1h", help="Timeframe")
 
     # Paper trading command

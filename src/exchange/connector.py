@@ -12,6 +12,7 @@ from ccxt.base.errors import (
     RequestTimeout,
     ExchangeNotAvailable,
     RateLimitExceeded,
+    AuthenticationError,
 )
 
 from ..config.settings import Settings
@@ -58,10 +59,15 @@ class ExchangeConnector:
                 'rateLimit': int(self.settings.rate_limit_delay * 1000),  # ms
             }
 
-            # Add API keys if not in dry run mode
+            # Add API keys if not in dry run mode and keys are valid
             if not self.settings.is_dry_run_mode():
-                config['apiKey'] = self.settings.binance_api_key
-                config['secret'] = self.settings.binance_secret_key
+                if self.settings.binance_api_key and self.settings.binance_secret_key:
+                    # Only add keys if they look valid (not empty and reasonable length)
+                    if len(self.settings.binance_api_key) > 10 and len(self.settings.binance_secret_key) > 10:
+                        config['apiKey'] = self.settings.binance_api_key
+                        config['secret'] = self.settings.binance_secret_key
+                    else:
+                        logger.warning("API keys appear invalid, proceeding without authentication")
 
             # Set testnet if configured
             if self.settings.exchange_testnet:
@@ -72,14 +78,28 @@ class ExchangeConnector:
             # Initialize exchange
             self.exchange = exchange_class(config)
 
-            # Load markets
-            self.exchange.load_markets()
+            # Try to load markets (requires authentication for some exchanges)
+            # If authentication fails, we can still use public endpoints (like fetch_ohlcv)
+            try:
+                self.exchange.load_markets()
+                logger.info(
+                    f"Connected to {self.settings.exchange_name} "
+                    f"(testnet={self.settings.exchange_testnet}, authenticated=True)"
+                )
+            except AuthenticationError as e:
+                logger.warning(
+                    f"Authentication failed when loading markets: {e}"
+                )
+                logger.warning(
+                    "Proceeding with public-only mode (backtesting/read-only). "
+                    "Some features may be unavailable."
+                )
+                logger.info(
+                    f"Connected to {self.settings.exchange_name} "
+                    f"(testnet={self.settings.exchange_testnet}, public_only=True)"
+                )
 
             self._connected = True
-            logger.info(
-                f"Connected to {self.settings.exchange_name} "
-                f"(testnet={self.settings.exchange_testnet})"
-            )
 
         except Exception as e:
             logger.error(f"Failed to connect to exchange: {e}")
